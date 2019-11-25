@@ -16,19 +16,10 @@ defmodule WarehouseSimulator.Picker do
     Agent.get_and_update(
       picker,
       fn state ->
-        params = state[:station_parameters]
-        picks = Map.take(pick_ticket.item_picks, MapSet.to_list(params.pickable_items))
-        item_count = map_size(picks)
-        pick_count = Enum.sum(Map.values(picks))
+        duration = pick_duration(state[:station_parameters], pick_ticket)
+        new_state = Map.update!(state, :elapsed_time, &(&1 + duration))
 
-        pick_time =
-          params.seconds_per_pick_ticket +
-            item_count * params.seconds_per_item +
-            pick_count * params.seconds_per_quantity
-
-        new_state = Map.update!(state, :elapsed_time, &(&1 + pick_time))
-
-        {pick_time, new_state}
+        {duration, new_state}
       end,
       :infinity
     )
@@ -36,5 +27,16 @@ defmodule WarehouseSimulator.Picker do
 
   def elapsed_time(picker) do
     Agent.get(picker, & &1[:elapsed_time])
+  end
+
+  defp pick_duration(station_parameters, pick_ticket) do
+    item_list = MapSet.to_list(station_parameters.pickable_items)
+    picks = pick_ticket.item_picks |> Map.take(item_list)
+    item_count = map_size(picks)
+    pick_count = picks |> Map.values() |> Enum.sum()
+
+    station_parameters.seconds_per_pick_ticket +
+      item_count * station_parameters.seconds_per_item +
+      pick_count * station_parameters.seconds_per_quantity
   end
 end
