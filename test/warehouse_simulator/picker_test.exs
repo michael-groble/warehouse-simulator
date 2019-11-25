@@ -1,12 +1,15 @@
 defmodule WarehouseSimulator.PickerTest do
   use ExUnit.Case, async: true
+  alias WarehouseSimulator.Picker
+  alias WarehouseSimulator.PickTicket
+  alias WarehouseSimulator.StationParameters
 
-  doctest WarehouseSimulator.Picker
+  doctest Picker
 
   setup do
     [
-      pick_ticket: %WarehouseSimulator.PickTicket{item_picks: %{"A" => 1, "B" => 2}},
-      station_parameters: %WarehouseSimulator.StationParameters{
+      pick_ticket: %PickTicket{item_picks: %{"A" => 1, "B" => 2}},
+      station_parameters: %StationParameters{
         pickable_items: %MapSet{},
         seconds_per_pick_ticket: 1.0,
         seconds_per_item: 1.0,
@@ -51,24 +54,24 @@ defmodule WarehouseSimulator.PickerTest do
     setup :start_link
 
     test "pick updates elapsed time", context do
-      assert WarehouseSimulator.Picker.elapsed_time(context[:picker]) == 0.0
+      assert Picker.elapsed_time(context[:picker]) == 0.0
       pick(context)
-      assert WarehouseSimulator.Picker.elapsed_time(context[:picker]) == 1.0
+      assert Picker.elapsed_time(context[:picker]) == 1.0
     end
   end
 
   defp pick(context) do
-    WarehouseSimulator.Picker.pick(context[:picker], context[:pick_ticket])
+    Picker.pick(context[:picker], context[:pick_ticket])
   end
 
   defp start_link(context) do
-    {:ok, picker} = WarehouseSimulator.Picker.start_link(context[:station_parameters])
+    {:ok, picker} = Picker.start_link(context[:station_parameters])
     [picker: picker]
   end
 
   defp add_items(context, items) do
     params = context[:station_parameters]
-    params = %{params | pickable_items: MapSet.union(params.pickable_items, MapSet.new(items))}
-    [station_parameters: params]
+    items = params.pickable_items |> MapSet.union(MapSet.new(items))
+    [station_parameters: %{params | pickable_items: items}]
   end
 end

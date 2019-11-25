@@ -26,7 +26,7 @@ defmodule WarehouseSimulator.Picker do
             item_count * params.seconds_per_item +
             pick_count * params.seconds_per_quantity
 
-        new_state = Map.update!(state, :elapsed_time, fn time -> time + pick_time end)
+        new_state = Map.update!(state, :elapsed_time, &(&1 + pick_time))
 
         {pick_time, new_state}
       end,
@@ -35,6 +35,6 @@ defmodule WarehouseSimulator.Picker do
   end
 
   def elapsed_time(picker) do
-    Agent.get(picker, fn state -> state[:elapsed_time] end)
+    Agent.get(picker, & &1[:elapsed_time])
   end
 end
