@@ -2,14 +2,14 @@ defmodule WarehouseSimulator.PickerTest do
   use ExUnit.Case, async: true
   alias WarehouseSimulator.Picker
   alias WarehouseSimulator.PickTicket
-  alias WarehouseSimulator.StationParameters
+  alias WarehouseSimulator.PickerParameters
 
   doctest Picker
 
   setup do
     [
       pick_ticket: %PickTicket{item_picks: %{"A" => 1, "B" => 2}},
-      station_parameters: %StationParameters{
+      station_parameters: %PickerParameters{
         pickable_items: %MapSet{},
         seconds_per_pick_ticket: 1.0,
         seconds_per_item: 1.0,
@@ -61,7 +61,7 @@ defmodule WarehouseSimulator.PickerTest do
   end
 
   defp pick(context) do
-    Picker.pick(context[:picker], context[:pick_ticket])
+    Picker.process_pick_ticket(context[:picker], context[:pick_ticket])
   end
 
   defp start_link(context) do

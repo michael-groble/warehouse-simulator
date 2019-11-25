@@ -1,5 +1,6 @@
 defmodule WarehouseSimulator.Picker do
   @moduledoc false
+  @behaviour WarehouseSimulator.LineMember
 
   use Agent
 
@@ -12,7 +13,7 @@ defmodule WarehouseSimulator.Picker do
     Agent.start_link(fn -> state end)
   end
 
-  def pick(picker, pick_ticket) do
+  def process_pick_ticket(picker, pick_ticket) do
     Agent.get_and_update(
       picker,
       fn state ->
