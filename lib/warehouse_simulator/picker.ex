@@ -7,7 +7,8 @@ defmodule WarehouseSimulator.Picker do
   def start_link(parameters) do
     state = %{
       parameters: parameters,
-      now: 0.0
+      now: 0.0,
+      idle_duration: 0.0
     }
 
     Agent.start_link(fn -> state end)
@@ -30,9 +31,15 @@ defmodule WarehouseSimulator.Picker do
     Agent.get(picker, & &1[:now])
   end
 
+  def idle_time(picker) do
+    Agent.get(picker, & &1[:idle_duration])
+  end
+
   defp wait_idle_until(state, time) do
-    if time > state[:now] do
-      %{state | now: time}
+    duration = time - state[:now]
+
+    if duration > 0 do
+      %{state | now: time} |> Map.update!(:idle_duration, &(&1 + duration))
     else
       state
     end

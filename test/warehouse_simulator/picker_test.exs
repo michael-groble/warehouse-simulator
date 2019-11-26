@@ -53,10 +53,14 @@ defmodule WarehouseSimulator.PickerTest do
   describe "elapsed_time" do
     setup :start_link
 
-    test "pick updates elapsed time with  delay", context do
+    test "pick updates elapsed time with delays", context do
       assert Picker.elapsed_time(context[:picker]) == 0.0
-      pick(context, 10.0)
-      assert Picker.elapsed_time(context[:picker]) == 11.0
+      pick(context)
+      assert Picker.elapsed_time(context[:picker]) == 1.0
+      assert Picker.idle_time(context[:picker]) == 0.0
+      pick(context, 2.0)
+      assert Picker.elapsed_time(context[:picker]) == 3.0 # two seconds of work + 1 second of idle
+      assert Picker.idle_time(context[:picker]) == 1.0
     end
   end
 
