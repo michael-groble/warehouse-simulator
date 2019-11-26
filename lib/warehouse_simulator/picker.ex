@@ -8,10 +8,19 @@ defmodule WarehouseSimulator.Picker do
     state = %{
       parameters: parameters,
       now: 0.0,
-      idle_duration: 0.0
+      blocked_until: 0.0,
+      idle_duration: 0.0,
+      next_in_line: nil
     }
 
     Agent.start_link(fn -> state end)
+  end
+
+  def get_and_put_next_line_member(picker, next_in_line) do
+    Agent.get_and_update(picker, fn state ->
+      # reset any block time from previous neighbor
+      {state[:next_in_line], %{state | next_in_line: next_in_line, blocked_until: 0.0}}
+    end)
   end
 
   def process_pick_ticket(picker, receive_at, pick_ticket) do
@@ -19,9 +28,13 @@ defmodule WarehouseSimulator.Picker do
       picker,
       fn state ->
         duration = pick_duration(state[:parameters], pick_ticket)
-        new_state = state |> wait_idle_until(receive_at) |> work_for_duration(duration)
 
-        {duration, new_state}
+        state
+        |> wait_idle_until(receive_at)
+        |> work_for_duration(duration)
+        |> wait_until_unblocked
+        |> pass_down_line(pick_ticket)
+        |> now_and_state
       end,
       :infinity
     )
@@ -35,6 +48,16 @@ defmodule WarehouseSimulator.Picker do
     Agent.get(picker, & &1[:idle_duration])
   end
 
+  defp pass_down_line(state, pick_ticket) do
+    next = state[:next_in_line]
+
+    if state[:next_in_line] == nil do
+      state
+    else
+      %{state | blocked_until: process_pick_ticket(next, state[:now], pick_ticket)}
+    end
+  end
+
   defp wait_idle_until(state, time) do
     duration = time - state[:now]
 
@@ -43,6 +66,14 @@ defmodule WarehouseSimulator.Picker do
     else
       state
     end
+  end
+
+  defp wait_until_unblocked(state) do
+    wait_idle_until(state, state[:blocked_until])
+  end
+
+  defp now_and_state(state) do
+    {state[:now], state}
   end
 
   defp work_for_duration(state, duration) do

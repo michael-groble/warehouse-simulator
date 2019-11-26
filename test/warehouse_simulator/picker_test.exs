@@ -28,10 +28,8 @@ defmodule WarehouseSimulator.PickerTest do
 
   describe "pick with item A" do
     setup context do
-      add_items(context, ["A"])
+      start_link(context, ["A"])
     end
-
-    setup :start_link
 
     test "it returns base plus item plus quantity", context do
       assert pick(context) == 3.0
@@ -40,10 +38,8 @@ defmodule WarehouseSimulator.PickerTest do
 
   describe "pick with items A and B" do
     setup context do
-      add_items(context, ["A", "B"])
+      start_link(context, ["A", "B"])
     end
-
-    setup :start_link
 
     test "it returns base plus items plus quantities", context do
       assert pick(context) == 6.0
@@ -59,8 +55,30 @@ defmodule WarehouseSimulator.PickerTest do
       assert Picker.elapsed_time(context[:picker]) == 1.0
       assert Picker.idle_time(context[:picker]) == 0.0
       pick(context, 2.0)
-      assert Picker.elapsed_time(context[:picker]) == 3.0 # two seconds of work + 1 second of idle
+      # two seconds of work + 1 second of idle
+      assert Picker.elapsed_time(context[:picker]) == 3.0
       assert Picker.idle_time(context[:picker]) == 1.0
+    end
+  end
+
+  describe "with downstream picker" do
+    setup context do
+      start_link(context, ["A"])
+    end
+
+    test "passes tickets along and accumulates time", context do
+      [picker: other] = start_link(context, ["B"])
+      Picker.get_and_put_next_line_member(context[:picker], other)
+      t = pick(context, 0)
+      t = pick(context, t)
+      pick(context, t)
+      # time      1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+      # picker 1: a a a|b b b -|c c c -|
+      # picker 2: - - - a a a a|b b b b|c c c c
+      assert Picker.elapsed_time(other) == 15.0
+      assert Picker.idle_time(other) == 3.0
+      assert Picker.elapsed_time(context[:picker]) == 11.0
+      assert Picker.idle_time(context[:picker]) == 2.0
     end
   end
 
@@ -68,14 +86,9 @@ defmodule WarehouseSimulator.PickerTest do
     Picker.process_pick_ticket(context[:picker], at, context[:pick_ticket])
   end
 
-  defp start_link(context) do
-    {:ok, picker} = Picker.start_link(context[:station_parameters])
+  defp start_link(context, items \\ []) do
+    params = %{context[:station_parameters] | pickable_items: MapSet.new(items)}
+    {:ok, picker} = Picker.start_link(params)
     [picker: picker]
-  end
-
-  defp add_items(context, items) do
-    params = context[:station_parameters]
-    items = params.pickable_items |> MapSet.union(MapSet.new(items))
-    [station_parameters: %{params | pickable_items: items}]
   end
 end
