@@ -1,4 +1,4 @@
-defmodule WarehouseSimulator.PickerParameters do
+defmodule WarehouseSimulator.Picker.Parameters do
   defstruct pickable_items: %MapSet{},
             seconds_per_pick_ticket: 1.0,
             seconds_per_item: 1.0,

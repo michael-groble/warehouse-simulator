@@ -4,21 +4,21 @@ defmodule WarehouseSimulator.Picker do
 
   use Agent
 
-  def start_link(station_parameters) do
+  def start_link(parameters) do
     state = %{
-      station_parameters: station_parameters,
-      elapsed_time: 0.0
+      parameters: parameters,
+      now: 0.0
     }
 
     Agent.start_link(fn -> state end)
   end
 
-  def process_pick_ticket(picker, pick_ticket) do
+  def process_pick_ticket(picker, receive_at, pick_ticket) do
     Agent.get_and_update(
       picker,
       fn state ->
-        duration = pick_duration(state[:station_parameters], pick_ticket)
-        new_state = Map.update!(state, :elapsed_time, &(&1 + duration))
+        duration = pick_duration(state[:parameters], pick_ticket)
+        new_state = state |> wait_idle_until(receive_at) |> work_for_duration(duration)
 
         {duration, new_state}
       end,
@@ -27,17 +27,29 @@ defmodule WarehouseSimulator.Picker do
   end
 
   def elapsed_time(picker) do
-    Agent.get(picker, & &1[:elapsed_time])
+    Agent.get(picker, & &1[:now])
   end
 
-  defp pick_duration(station_parameters, pick_ticket) do
-    item_list = MapSet.to_list(station_parameters.pickable_items)
+  defp wait_idle_until(state, time) do
+    if time > state[:now] do
+      %{state | now: time}
+    else
+      state
+    end
+  end
+
+  defp work_for_duration(state, duration) do
+    Map.update!(state, :now, &(&1 + duration))
+  end
+
+  defp pick_duration(parameters, pick_ticket) do
+    item_list = MapSet.to_list(parameters.pickable_items)
     picks = pick_ticket.item_picks |> Map.take(item_list)
     item_count = map_size(picks)
     pick_count = picks |> Map.values() |> Enum.sum()
 
-    station_parameters.seconds_per_pick_ticket +
-      item_count * station_parameters.seconds_per_item +
-      pick_count * station_parameters.seconds_per_quantity
+    parameters.seconds_per_pick_ticket +
+      item_count * parameters.seconds_per_item +
+      pick_count * parameters.seconds_per_quantity
   end
 end

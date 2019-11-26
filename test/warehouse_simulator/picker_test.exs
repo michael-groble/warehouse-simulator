@@ -2,14 +2,14 @@ defmodule WarehouseSimulator.PickerTest do
   use ExUnit.Case, async: true
   alias WarehouseSimulator.Picker
   alias WarehouseSimulator.PickTicket
-  alias WarehouseSimulator.PickerParameters
+  alias WarehouseSimulator.Picker.Parameters
 
   doctest Picker
 
   setup do
     [
       pick_ticket: %PickTicket{item_picks: %{"A" => 1, "B" => 2}},
-      station_parameters: %PickerParameters{
+      station_parameters: %Parameters{
         pickable_items: %MapSet{},
         seconds_per_pick_ticket: 1.0,
         seconds_per_item: 1.0,
@@ -53,15 +53,15 @@ defmodule WarehouseSimulator.PickerTest do
   describe "elapsed_time" do
     setup :start_link
 
-    test "pick updates elapsed time", context do
+    test "pick updates elapsed time with  delay", context do
       assert Picker.elapsed_time(context[:picker]) == 0.0
-      pick(context)
-      assert Picker.elapsed_time(context[:picker]) == 1.0
+      pick(context, 10.0)
+      assert Picker.elapsed_time(context[:picker]) == 11.0
     end
   end
 
-  defp pick(context) do
-    Picker.process_pick_ticket(context[:picker], context[:pick_ticket])
+  defp pick(context, at \\ 0.0) do
+    Picker.process_pick_ticket(context[:picker], at, context[:pick_ticket])
   end
 
   defp start_link(context) do
