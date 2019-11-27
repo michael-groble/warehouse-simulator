@@ -6,6 +6,38 @@ defmodule WarehouseSimulator.PickerTest do
 
   doctest Picker
 
+  defmodule Member do
+    @behaviour WarehouseSimulator.LineMember
+
+    use Agent
+
+    def start_link do
+      Agent.start_link(fn -> %{} end)
+    end
+
+    def get_and_put_next_line_member(_member, _next_in_line, _module) do
+      nil
+    end
+
+    def process_pick_ticket(member, receive_at, pick_ticket, current_contents) do
+      Agent.get_and_update(
+        member,
+        fn _ ->
+          {receive_at,
+           %{
+             receive_at: receive_at,
+             pick_ticket: pick_ticket,
+             current_contents: current_contents
+           }}
+        end
+      )
+    end
+
+    def state(member) do
+      Agent.get(member, & &1)
+    end
+  end
+
   setup do
     [
       pick_ticket: %PickTicket{item_picks: %{"A" => 1, "B" => 2}},
@@ -68,7 +100,7 @@ defmodule WarehouseSimulator.PickerTest do
 
     test "passes tickets along and accumulates time", context do
       [picker: other] = start_link(context, ["B"])
-      Picker.get_and_put_next_line_member(context[:picker], other)
+      Picker.get_and_put_next_line_member(context[:picker], other, Picker)
       t = pick(context, 0)
       t = pick(context, t)
       pick(context, t)
@@ -79,6 +111,15 @@ defmodule WarehouseSimulator.PickerTest do
       assert Picker.idle_time(other) == 3.0
       assert Picker.elapsed_time(context[:picker]) == 11.0
       assert Picker.idle_time(context[:picker]) == 2.0
+    end
+
+    test "it invokes next in line with valid time and current_contents", context do
+      {:ok, other} = Member.start_link()
+      Picker.get_and_put_next_line_member(context[:picker], other, Member)
+      pick(context)
+      received = Member.state(other)
+      assert received[:receive_at] == 3.0
+      assert received[:current_contents] == %{"A" => 1}
     end
   end
 

@@ -10,30 +10,33 @@ defmodule WarehouseSimulator.Picker do
       now: 0.0,
       blocked_until: 0.0,
       idle_duration: 0.0,
-      next_in_line: nil
+      next_in_line: nil,
+      next_module: nil
     }
 
     Agent.start_link(fn -> state end)
   end
 
-  def get_and_put_next_line_member(picker, next_in_line) do
+  def get_and_put_next_line_member(picker, next_in_line, module) do
     Agent.get_and_update(picker, fn state ->
       # reset any block time from previous neighbor
-      {state[:next_in_line], %{state | next_in_line: next_in_line, blocked_until: 0.0}}
+      {state[:next_in_line],
+       %{state | next_in_line: next_in_line, next_module: module, blocked_until: 0.0}}
     end)
   end
 
-  def process_pick_ticket(picker, receive_at, pick_ticket) do
+  def process_pick_ticket(picker, receive_at, pick_ticket, current_contents \\ %{}) do
     Agent.get_and_update(
       picker,
       fn state ->
-        duration = pick_duration(state[:parameters], pick_ticket)
+        {duration, contents} =
+          pick_duration_and_contents(state[:parameters], pick_ticket, current_contents)
 
         state
         |> wait_idle_until(receive_at)
         |> work_for_duration(duration)
         |> wait_until_unblocked
-        |> pass_down_line(pick_ticket)
+        |> pass_down_line(pick_ticket, contents)
         |> now_and_state
       end,
       :infinity
@@ -48,13 +51,17 @@ defmodule WarehouseSimulator.Picker do
     Agent.get(picker, & &1[:idle_duration])
   end
 
-  defp pass_down_line(state, pick_ticket) do
+  defp pass_down_line(state, pick_ticket, contents) do
     next = state[:next_in_line]
 
     if state[:next_in_line] == nil do
       state
     else
-      %{state | blocked_until: process_pick_ticket(next, state[:now], pick_ticket)}
+      %{
+        state
+        | blocked_until:
+            state[:next_module].process_pick_ticket(next, state[:now], pick_ticket, contents)
+      }
     end
   end
 
@@ -80,14 +87,17 @@ defmodule WarehouseSimulator.Picker do
     Map.update!(state, :now, &(&1 + duration))
   end
 
-  defp pick_duration(parameters, pick_ticket) do
+  defp pick_duration_and_contents(parameters, pick_ticket, current_contents) do
     item_list = MapSet.to_list(parameters.pickable_items)
     picks = pick_ticket.item_picks |> Map.take(item_list)
     item_count = map_size(picks)
     pick_count = picks |> Map.values() |> Enum.sum()
 
-    parameters.seconds_per_pick_ticket +
-      item_count * parameters.seconds_per_item +
-      pick_count * parameters.seconds_per_quantity
+    duration =
+      parameters.seconds_per_pick_ticket +
+        item_count * parameters.seconds_per_item +
+        pick_count * parameters.seconds_per_quantity
+
+    {duration, Map.merge(current_contents, picks)}
   end
 end
