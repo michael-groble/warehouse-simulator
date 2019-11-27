@@ -46,21 +46,6 @@ defmodule WarehouseSimulator.PickerTest do
     end
   end
 
-  describe "elapsed_time" do
-    setup :start_link
-
-    test "pick updates elapsed time with delays", context do
-      assert Picker.elapsed_time(context[:picker]) == 0.0
-      pick(context)
-      assert Picker.elapsed_time(context[:picker]) == 1.0
-      assert Picker.idle_time(context[:picker]) == 0.0
-      pick(context, 2.0)
-      # two seconds of work + 1 second of idle
-      assert Picker.elapsed_time(context[:picker]) == 3.0
-      assert Picker.idle_time(context[:picker]) == 1.0
-    end
-  end
-
   describe "with downstream picker" do
     setup context do
       start_link(context, ["A"])
@@ -68,7 +53,7 @@ defmodule WarehouseSimulator.PickerTest do
 
     test "passes tickets along and accumulates time", context do
       [picker: other] = start_link(context, ["B"])
-      Picker.get_and_put_next_line_member(context[:picker], other)
+      Picker.get_and_put_next_line_member(context[:picker], other, Picker)
       t = pick(context, 0)
       t = pick(context, t)
       pick(context, t)
