@@ -43,11 +43,11 @@ defmodule WarehouseSimulator.LineMemberTest do
         member,
         fn _ ->
           {receive_at,
-            %{
-              receive_at: receive_at,
-              pick_ticket: pick_ticket,
-              current_contents: current_contents
-            }}
+           %{
+             receive_at: receive_at,
+             pick_ticket: pick_ticket,
+             current_contents: current_contents
+           }}
         end
       )
     end
@@ -96,7 +96,7 @@ defmodule WarehouseSimulator.LineMemberTest do
   end
 
   defp start_link(_context) do
-    {:ok, member} = Member.start_link
+    {:ok, member} = Member.start_link()
     [member: member]
   end
 end
