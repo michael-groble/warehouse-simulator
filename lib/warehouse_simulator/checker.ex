@@ -1,5 +1,10 @@
 defmodule WarehouseSimulator.Checker do
-  @moduledoc false
+  @moduledoc """
+  A Checker performs random quality checks on the current contents.
+
+  Currently, there are no simulated "failures" in which the ticket needs to be sent back upstream or otherwise
+  corrected.  All tickets are passed downstream after the check.
+  """
 
   use WarehouseSimulator.LineMember
   use Agent

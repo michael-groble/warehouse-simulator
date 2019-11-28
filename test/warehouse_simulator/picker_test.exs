@@ -72,7 +72,7 @@ defmodule WarehouseSimulator.PickerTest do
   end
 
   defp start_link(context, items \\ []) do
-    params = %{context[:station_parameters] | pickable_items: MapSet.new(items)}
+    params = %{context[:station_parameters] | pickable_items: items}
     {:ok, picker} = Picker.start_link(params)
     [picker: picker]
   end
