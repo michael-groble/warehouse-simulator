@@ -21,6 +21,7 @@ defmodule WarehouseSimulator.LineTest do
     assert id == 2
     assert module == Checker
     assert params.check_probability == 0.25
+    assert params.seconds_per_pick_ticket == 2.0
     assert length(options) == 0
   end
 end
