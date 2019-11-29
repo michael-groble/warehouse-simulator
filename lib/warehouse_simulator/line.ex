@@ -6,6 +6,7 @@ defmodule WarehouseSimulator.Line do
 
   alias WarehouseSimulator.Picker
   alias WarehouseSimulator.Checker
+  use Supervisor
 
   @doc """
   Constructs a list of `{module, [args]}` tuples from the specified file that can then be passed to `@start_link/1`:
@@ -14,6 +15,10 @@ defmodule WarehouseSimulator.Line do
       Line.start_link(members, line_name)
   """
   def options_from_file(filename) do
+    # ensure atoms are loaded
+    [Picker, Checker]
+    |> Enum.each(&Code.ensure_loaded(Module.concat(&1, Parameters)))
+
     ~w(members type parameters) |> Enum.each(&String.to_atom/1)
 
     with {:ok, body} <- File.read(filename),
@@ -25,7 +30,7 @@ defmodule WarehouseSimulator.Line do
             "Checker" -> Checker
           end
 
-        {module, [struct(Module.concat(module, Parameters), member_spec[:parameters])]}
+        {module, struct(Module.concat(module, Parameters), member_spec[:parameters])}
       end)
     end
   end
