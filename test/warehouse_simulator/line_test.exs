@@ -10,13 +10,13 @@ defmodule WarehouseSimulator.LineTest do
 
   describe "options_from_file" do
     options = Line.options_from_file("test/fixtures/simple_line.json")
-    {{module, [params]}, options} = List.pop_at(options, 0)
+    {{module, params}, options} = List.pop_at(options, 0)
     assert module == Picker
     assert params.pickable_items == ["A", "B"]
-    {{module, [params]}, options} = List.pop_at(options, 0)
+    {{module, params}, options} = List.pop_at(options, 0)
     assert module == Picker
     assert params.pickable_items == ["C", "D"]
-    {{module, [params]}, options} = List.pop_at(options, 0)
+    {{module, params}, options} = List.pop_at(options, 0)
     assert module == Checker
     assert params.check_probability == 0.25
     assert params.seconds_per_pick_ticket == 2.0
