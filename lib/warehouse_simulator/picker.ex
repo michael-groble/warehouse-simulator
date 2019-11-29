@@ -1,12 +1,15 @@
 defmodule WarehouseSimulator.Picker do
-  @moduledoc false
+  @moduledoc """
+  A Picker is responsible for fulfilling a subset of possible items requested in the pick ticket.  They fulfill what they
+  can and pass it down the line.
+  """
 
   use WarehouseSimulator.LineMember
   use Agent
 
   def start_link(parameters) do
     state = %{
-      parameters: parameters,
+      parameters: Map.update!(parameters, :pickable_items, &Enum.uniq/1),
       line_member: %WarehouseSimulator.LineMember.State{}
     }
 
@@ -34,8 +37,7 @@ defmodule WarehouseSimulator.Picker do
   end
 
   defp pick_duration_and_contents(parameters, pick_ticket, current_contents) do
-    item_list = MapSet.to_list(parameters.pickable_items)
-    picks = pick_ticket.item_picks |> Map.take(item_list)
+    picks = pick_ticket.item_picks |> Map.take(parameters.pickable_items)
     item_count = map_size(picks)
     pick_count = picks |> Map.values() |> Enum.sum()
 
