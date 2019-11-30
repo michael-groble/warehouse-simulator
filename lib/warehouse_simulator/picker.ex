@@ -4,7 +4,8 @@ defmodule WarehouseSimulator.Picker do
   can and pass it down the line.
   """
 
-  use WarehouseSimulator.LineMember
+  require WarehouseSimulator.LineMember
+  alias WarehouseSimulator.LineMember
   use GenServer
 
   def start_link(parameters) do
@@ -14,7 +15,7 @@ defmodule WarehouseSimulator.Picker do
   def init(parameters) do
     state = %{
       parameters: Map.update!(parameters, :pickable_items, &Enum.uniq/1),
-      line_member: %WarehouseSimulator.LineMember.State{}
+      line_member: %LineMember.State{}
     }
 
     {:ok, state}
@@ -40,7 +41,7 @@ defmodule WarehouseSimulator.Picker do
     {duration, contents} =
       pick_duration_and_contents(state[:parameters], pick_ticket, current_contents)
 
-    process_pick_ticket_state(
+    LineMember.process_pick_ticket(
       state[:line_member],
       receive_at,
       pick_ticket,
@@ -51,7 +52,7 @@ defmodule WarehouseSimulator.Picker do
   end
 
   def handle_call({:get_and_put_next_line_member, next_in_line, module}, _from, state) do
-    get_and_put_next_line_member_state(state[:line_member], next_in_line, module)
+    LineMember.get_and_put_next_line_member(state[:line_member], next_in_line, module)
     |> reply(state)
   end
 

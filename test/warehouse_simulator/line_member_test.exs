@@ -6,7 +6,7 @@ defmodule WarehouseSimulator.LineMemberTest do
   doctest LineMember
 
   defmodule Member do
-    use WarehouseSimulator.LineMember
+    require LineMember
     use Agent
 
     def start_link do
@@ -17,7 +17,7 @@ defmodule WarehouseSimulator.LineMemberTest do
       Agent.get_and_update(
         member,
         fn state ->
-          process_pick_ticket_state(
+          LineMember.process_pick_ticket(
             state[:line_member],
             receive_at,
             pick_ticket,
@@ -31,7 +31,7 @@ defmodule WarehouseSimulator.LineMemberTest do
 
     def get_and_put_next_line_member(checker, next_in_line, module) do
       Agent.get_and_update(checker, fn state ->
-        get_and_put_next_line_member_state(state[:line_member], next_in_line, module)
+        LineMember.get_and_put_next_line_member(state[:line_member], next_in_line, module)
         |> merge_line_member_state(state)
       end)
     end
@@ -50,7 +50,7 @@ defmodule WarehouseSimulator.LineMemberTest do
   end
 
   defmodule CaptureMember do
-    use WarehouseSimulator.LineMember
+    require LineMember
     use Agent
 
     def start_link do
@@ -73,7 +73,7 @@ defmodule WarehouseSimulator.LineMemberTest do
 
     def get_and_put_next_line_member(checker, next_in_line, module) do
       Agent.get_and_update(checker, fn state ->
-        get_and_put_next_line_member_state(state[:line_member], next_in_line, module)
+        LineMember.get_and_put_next_line_member(state[:line_member], next_in_line, module)
         |> merge_line_member_state(state)
       end)
     end

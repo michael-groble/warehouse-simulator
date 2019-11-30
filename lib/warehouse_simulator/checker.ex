@@ -6,13 +6,14 @@ defmodule WarehouseSimulator.Checker do
   corrected.  All tickets are passed downstream after the check.
   """
 
-  use WarehouseSimulator.LineMember
+  require WarehouseSimulator.LineMember
+  alias WarehouseSimulator.LineMember
   use Agent
 
   def start_link(parameters) do
     state = %{
       parameters: parameters,
-      line_member: %WarehouseSimulator.LineMember.State{}
+      line_member: %LineMember.State{}
     }
 
     Agent.start_link(fn -> state end)
@@ -20,7 +21,7 @@ defmodule WarehouseSimulator.Checker do
 
   def get_and_put_next_line_member(checker, next_in_line, module) do
     Agent.get_and_update(checker, fn state ->
-      get_and_put_next_line_member_state(state[:line_member], next_in_line, module)
+      LineMember.get_and_put_next_line_member(state[:line_member], next_in_line, module)
       |> merge_line_member_state(state)
     end)
   end
@@ -29,7 +30,7 @@ defmodule WarehouseSimulator.Checker do
     Agent.get_and_update(
       checker,
       fn state ->
-        process_pick_ticket_state(
+        LineMember.process_pick_ticket(
           state[:line_member],
           receive_at,
           pick_ticket,
