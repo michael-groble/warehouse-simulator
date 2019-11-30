@@ -1,21 +1,27 @@
 # WarehouseSimulator
 
-**TODO: Add description**
+Simulates picking orders on a sequential line in a warehouse.  Not a huge amount of functionality here,
+mainly a learning opportunity to explore Elixir.
 
-## Installation
+Two files define the inputs to the simulation, one defining the members on the line. A
+sample is [here](test/fixtures/simple_line.json).  Members can be a `Picker` or a `Checker`.
+The input file allows overriding the default parameters defined in
+[Picker.Parameters](lib/warehouse_simulator/picker/parameters.ex) and
+[Checker.Parameters](lib/warehouse_simulator/checker/parameters.ex).  The other file is a list of
+work orders or "pick tickets".  An example is [here](test/fixtures/pick_tickets.tsv). Each line is
+a separate ticket where items and quantities are separated by tabs.
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `warehouse_simulator` to your list of dependencies in `mix.exs`:
+The output of the simulation is a list of total simulation time to run the entire line as well
+as a list of how much each member spent idle.  For example:
 
-```elixir
-def deps do
-  [
-    {:warehouse_simulator, "~> 0.1.0"}
-  ]
-end
+```bash
+$ mix escript.build
+Compiling 4 files (.ex)
+Generated escript _build/dev/warehouse_simulator with MIX_ENV=dev
+$ _build/dev/warehouse_simulator test/fixtures/simple_line.json test/fixtures/pick_tickets.tsv
+Elapsed: 36.0
+Idle times:
+5.0 (14.0%)
+13.0 (36.0%)
+18.0 (50.0%)
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/warehouse_simulator](https://hexdocs.pm/warehouse_simulator).
-

@@ -22,14 +22,15 @@ defmodule WarehouseSimulator do
       times = Line.process_pick_tickets(line, pick_tickets)
       max_time = times |> Enum.map(&Map.get(&1, :elapsed)) |> Enum.max()
 
+      IO.puts("Elapsed: #{max_time}")
+      IO.puts("Idle times:")
+
       times
       |> Enum.each(fn times ->
         idle = times[:idle]
         percent_idle = Float.round(100.0 * idle / max_time)
         IO.puts("#{idle} (#{percent_idle}%)")
       end)
-
-      IO.puts("Elapsed: #{max_time}")
     end
 
     defp line_to_picks(line) do
