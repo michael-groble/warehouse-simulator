@@ -6,7 +6,7 @@ defmodule WarehouseSimulator.LineMemberTest do
   doctest LineMember
 
   defmodule Member do
-    use WarehouseSimulator.LineMember
+    require LineMember
     use Agent
 
     def start_link do
@@ -17,21 +17,36 @@ defmodule WarehouseSimulator.LineMemberTest do
       Agent.get_and_update(
         member,
         fn state ->
-          process_pick_ticket_state(
+          LineMember.process_pick_ticket(
             state[:line_member],
             receive_at,
             pick_ticket,
             Map.merge(current_contents, %{"A" => 1}),
             1.0
           )
-          |> now_and_state(state)
+          |> LineMember.merge_line_member_state(state)
         end
       )
+    end
+
+    def get_and_put_next_line_member(checker, next_in_line, module) do
+      Agent.get_and_update(checker, fn state ->
+        LineMember.get_and_put_next_line_member(state[:line_member], next_in_line, module)
+        |> LineMember.merge_line_member_state(state)
+      end)
+    end
+
+    def elapsed_time(checker) do
+      Agent.get(checker, & &1[:line_member].now)
+    end
+
+    def idle_time(checker) do
+      Agent.get(checker, & &1[:line_member].idle_duration)
     end
   end
 
   defmodule CaptureMember do
-    use WarehouseSimulator.LineMember
+    require LineMember
     use Agent
 
     def start_link do
@@ -50,6 +65,21 @@ defmodule WarehouseSimulator.LineMemberTest do
            }}
         end
       )
+    end
+
+    def get_and_put_next_line_member(checker, next_in_line, module) do
+      Agent.get_and_update(checker, fn state ->
+        LineMember.get_and_put_next_line_member(state[:line_member], next_in_line, module)
+        |> LineMember.merge_line_member_state(state)
+      end)
+    end
+
+    def elapsed_time(checker) do
+      Agent.get(checker, & &1[:line_member].now)
+    end
+
+    def idle_time(checker) do
+      Agent.get(checker, & &1[:line_member].idle_duration)
     end
 
     def state(member) do
