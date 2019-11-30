@@ -18,9 +18,16 @@ defmodule WarehouseSimulator.Checker do
     Agent.start_link(fn -> state end)
   end
 
-  def process_pick_ticket(picker, receive_at, pick_ticket, current_contents \\ %{}) do
+  def get_and_put_next_line_member(checker, next_in_line, module) do
+    Agent.get_and_update(checker, fn state ->
+      get_and_put_next_line_member_state(state[:line_member], next_in_line, module)
+      |> merge_line_member_state(state)
+    end)
+  end
+
+  def process_pick_ticket(checker, receive_at, pick_ticket, current_contents \\ %{}) do
     Agent.get_and_update(
-      picker,
+      checker,
       fn state ->
         process_pick_ticket_state(
           state[:line_member],
@@ -29,10 +36,18 @@ defmodule WarehouseSimulator.Checker do
           current_contents,
           check_duration(state[:parameters], pick_ticket, current_contents)
         )
-        |> now_and_state(state)
+        |> merge_line_member_state(state)
       end,
       :infinity
     )
+  end
+
+  def elapsed_time(checker) do
+    Agent.get(checker, & &1[:line_member].now)
+  end
+
+  def idle_time(checker) do
+    Agent.get(checker, & &1[:line_member].idle_duration)
   end
 
   defp check_duration(parameters, _pick_ticket, contents) do
@@ -46,5 +61,9 @@ defmodule WarehouseSimulator.Checker do
         item_count * parameters.seconds_per_item +
         pick_count * parameters.seconds_per_quantity
     end
+  end
+
+  defp merge_line_member_state({value, member_state}, state) do
+    {value, %{state | line_member: member_state}}
   end
 end

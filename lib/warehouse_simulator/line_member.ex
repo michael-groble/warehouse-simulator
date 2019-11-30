@@ -65,31 +65,6 @@ defmodule WarehouseSimulator.LineMember do
     quote do
       @behaviour WarehouseSimulator.LineMember
 
-      @doc """
-      Default implementation
-
-      Requires member to have state matching `%{line_member: %WarehouseSimulator.LineMember.State{}}`
-      """
-      def get_and_put_next_line_member(member, next_in_line, module) do
-        Agent.get_and_update(member, fn state ->
-          # reset any block time from previous neighbor
-          {state[:line_member].next_in_line,
-           Map.update!(
-             state,
-             :line_member,
-             &%{&1 | next_in_line: next_in_line, next_module: module, blocked_until: 0.0}
-           )}
-        end)
-      end
-
-      def elapsed_time(picker) do
-        Agent.get(picker, & &1[:line_member].now)
-      end
-
-      def idle_time(picker) do
-        Agent.get(picker, & &1[:line_member].idle_duration)
-      end
-
       @spec process_pick_ticket_state(
               %WarehouseSimulator.LineMember.State{},
               number,
@@ -109,6 +84,12 @@ defmodule WarehouseSimulator.LineMember do
         |> work_for_duration(work_duration)
         |> wait_until_unblocked
         |> pass_down_line(pick_ticket, updated_contents)
+        |> now_and_state
+      end
+
+      defp get_and_put_next_line_member_state(state, next_in_line, module) do
+        {state.next_in_line,
+         %{state | next_in_line: next_in_line, next_module: module, blocked_until: 0.0}}
       end
 
       defp pass_down_line(state, pick_ticket, contents) do
@@ -139,8 +120,8 @@ defmodule WarehouseSimulator.LineMember do
         wait_idle_until(state, state.blocked_until)
       end
 
-      defp now_and_state(member_state, state) do
-        {member_state.now, %{state | line_member: member_state}}
+      defp now_and_state(state) do
+        {state.now, state}
       end
 
       defp work_for_duration(state, duration) do
