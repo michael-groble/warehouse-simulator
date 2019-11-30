@@ -22,7 +22,7 @@ defmodule WarehouseSimulator.Checker do
   def get_and_put_next_line_member(checker, next_in_line, module) do
     Agent.get_and_update(checker, fn state ->
       LineMember.get_and_put_next_line_member(state[:line_member], next_in_line, module)
-      |> merge_line_member_state(state)
+      |> LineMember.merge_line_member_state(state)
     end)
   end
 
@@ -37,7 +37,7 @@ defmodule WarehouseSimulator.Checker do
           current_contents,
           check_duration(state[:parameters], pick_ticket, current_contents)
         )
-        |> merge_line_member_state(state)
+        |> LineMember.merge_line_member_state(state)
       end,
       :infinity
     )
@@ -62,9 +62,5 @@ defmodule WarehouseSimulator.Checker do
         item_count * parameters.seconds_per_item +
         pick_count * parameters.seconds_per_quantity
     end
-  end
-
-  defp merge_line_member_state({value, member_state}, state) do
-    {value, %{state | line_member: member_state}}
   end
 end

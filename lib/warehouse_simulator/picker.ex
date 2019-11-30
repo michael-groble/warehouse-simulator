@@ -48,12 +48,12 @@ defmodule WarehouseSimulator.Picker do
       contents,
       duration
     )
-    |> reply(state)
+    |> LineMember.line_member_reply(state)
   end
 
   def handle_call({:get_and_put_next_line_member, next_in_line, module}, _from, state) do
     LineMember.get_and_put_next_line_member(state[:line_member], next_in_line, module)
-    |> reply(state)
+    |> LineMember.line_member_reply(state)
   end
 
   def handle_call({:elapsed_time}, _from, state) do
@@ -75,9 +75,5 @@ defmodule WarehouseSimulator.Picker do
         pick_count * parameters.seconds_per_quantity
 
     {duration, Map.merge(current_contents, picks)}
-  end
-
-  defp reply({value, member_state}, state) do
-    {:reply, value, %{state | line_member: member_state}}
   end
 end

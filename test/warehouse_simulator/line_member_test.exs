@@ -24,7 +24,7 @@ defmodule WarehouseSimulator.LineMemberTest do
             Map.merge(current_contents, %{"A" => 1}),
             1.0
           )
-          |> merge_line_member_state(state)
+          |> LineMember.merge_line_member_state(state)
         end
       )
     end
@@ -32,7 +32,7 @@ defmodule WarehouseSimulator.LineMemberTest do
     def get_and_put_next_line_member(checker, next_in_line, module) do
       Agent.get_and_update(checker, fn state ->
         LineMember.get_and_put_next_line_member(state[:line_member], next_in_line, module)
-        |> merge_line_member_state(state)
+        |> LineMember.merge_line_member_state(state)
       end)
     end
 
@@ -42,10 +42,6 @@ defmodule WarehouseSimulator.LineMemberTest do
 
     def idle_time(checker) do
       Agent.get(checker, & &1[:line_member].idle_duration)
-    end
-
-    defp merge_line_member_state({value, member_state}, state) do
-      {value, %{state | line_member: member_state}}
     end
   end
 
@@ -74,7 +70,7 @@ defmodule WarehouseSimulator.LineMemberTest do
     def get_and_put_next_line_member(checker, next_in_line, module) do
       Agent.get_and_update(checker, fn state ->
         LineMember.get_and_put_next_line_member(state[:line_member], next_in_line, module)
-        |> merge_line_member_state(state)
+        |> LineMember.merge_line_member_state(state)
       end)
     end
 
@@ -84,10 +80,6 @@ defmodule WarehouseSimulator.LineMemberTest do
 
     def idle_time(checker) do
       Agent.get(checker, & &1[:line_member].idle_duration)
-    end
-
-    defp merge_line_member_state({value, member_state}, state) do
-      {value, %{state | line_member: member_state}}
     end
 
     def state(member) do

@@ -73,6 +73,14 @@ defmodule WarehouseSimulator.LineMember do
      %{state | next_in_line: next_in_line, next_module: module, blocked_until: 0.0}}
   end
 
+  def merge_line_member_state({value, member_state}, state, key \\ :line_member) do
+    {value, Map.put(state, key, member_state)}
+  end
+
+  def line_member_reply({value, member_state}, state, key \\ :line_member) do
+    {:reply, value, Map.put(state, key, member_state)}
+  end
+
   defp pass_down_line(state, pick_ticket, contents) do
     next = state.next_in_line
 
