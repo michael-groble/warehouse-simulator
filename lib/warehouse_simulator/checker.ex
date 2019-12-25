@@ -5,50 +5,30 @@ defmodule WarehouseSimulator.Checker do
   Currently, there are no simulated "failures" in which the ticket needs to be sent back upstream or otherwise
   corrected.  All tickets are passed downstream after the check.
   """
-
-  require WarehouseSimulator.LineMember
-  alias WarehouseSimulator.LineMember
-  use Agent
+  use WarehouseSimulator.GenServerLineMember
 
   def start_link(parameters) do
+    GenServer.start_link(__MODULE__, parameters)
+  end
+
+  def init(parameters) do
     state = %{
       parameters: parameters,
       line_member: %LineMember.State{}
     }
 
-    Agent.start_link(fn -> state end)
+    {:ok, state}
   end
 
-  def get_and_put_next_line_member(checker, next_in_line, module) do
-    Agent.get_and_update(checker, fn state ->
-      LineMember.get_and_put_next_line_member(state[:line_member], next_in_line, module)
-      |> LineMember.merge_line_member_state(state)
-    end)
-  end
-
-  def process_pick_ticket(checker, receive_at, pick_ticket, current_contents \\ %{}) do
-    Agent.get_and_update(
-      checker,
-      fn state ->
-        LineMember.process_pick_ticket(
-          state[:line_member],
-          receive_at,
-          pick_ticket,
-          current_contents,
-          check_duration(state[:parameters], pick_ticket, current_contents)
-        )
-        |> LineMember.merge_line_member_state(state)
-      end,
-      :infinity
+  def handle_call({:process_pick_ticket, receive_at, pick_ticket, current_contents}, _from, state) do
+    LineMember.process_pick_ticket(
+      state[:line_member],
+      receive_at,
+      pick_ticket,
+      current_contents,
+      check_duration(state[:parameters], pick_ticket, current_contents)
     )
-  end
-
-  def elapsed_time(checker) do
-    Agent.get(checker, & &1[:line_member].now)
-  end
-
-  def idle_time(checker) do
-    Agent.get(checker, & &1[:line_member].idle_duration)
+    |> LineMember.line_member_reply(state)
   end
 
   defp check_duration(parameters, _pick_ticket, contents) do
