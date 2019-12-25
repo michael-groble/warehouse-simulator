@@ -8,47 +8,59 @@ defmodule WarehouseSimulator.Checker do
 
   require WarehouseSimulator.LineMember
   alias WarehouseSimulator.LineMember
-  use Agent
+  use GenServer
 
   def start_link(parameters) do
+    GenServer.start_link(__MODULE__, parameters)
+  end
+
+  def init(parameters) do
     state = %{
       parameters: parameters,
       line_member: %LineMember.State{}
     }
 
-    Agent.start_link(fn -> state end)
+    {:ok, state}
   end
 
-  def get_and_put_next_line_member(checker, next_in_line, module) do
-    Agent.get_and_update(checker, fn state ->
-      LineMember.get_and_put_next_line_member(state[:line_member], next_in_line, module)
-      |> LineMember.merge_line_member_state(state)
-    end)
+  def process_pick_ticket(picker, receive_at, pick_ticket, current_contents \\ %{}) do
+    GenServer.call(picker, {:process_pick_ticket, receive_at, pick_ticket, current_contents})
   end
 
-  def process_pick_ticket(checker, receive_at, pick_ticket, current_contents \\ %{}) do
-    Agent.get_and_update(
-      checker,
-      fn state ->
-        LineMember.process_pick_ticket(
-          state[:line_member],
-          receive_at,
-          pick_ticket,
-          current_contents,
-          check_duration(state[:parameters], pick_ticket, current_contents)
-        )
-        |> LineMember.merge_line_member_state(state)
-      end,
-      :infinity
+  def get_and_put_next_line_member(member, next_in_line, module) do
+    GenServer.call(member, {:get_and_put_next_line_member, next_in_line, module})
+  end
+
+  def elapsed_time(member) do
+    GenServer.call(member, {:elapsed_time})
+  end
+
+  def idle_time(member) do
+    GenServer.call(member, {:idle_time})
+  end
+
+  def handle_call({:process_pick_ticket, receive_at, pick_ticket, current_contents}, _from, state) do
+    LineMember.process_pick_ticket(
+      state[:line_member],
+      receive_at,
+      pick_ticket,
+      current_contents,
+      check_duration(state[:parameters], pick_ticket, current_contents)
     )
+    |> LineMember.line_member_reply(state)
   end
 
-  def elapsed_time(checker) do
-    Agent.get(checker, & &1[:line_member].now)
+  def handle_call({:get_and_put_next_line_member, next_in_line, module}, _from, state) do
+    LineMember.get_and_put_next_line_member(state[:line_member], next_in_line, module)
+    |> LineMember.line_member_reply(state)
   end
 
-  def idle_time(checker) do
-    Agent.get(checker, & &1[:line_member].idle_duration)
+  def handle_call({:elapsed_time}, _from, state) do
+    {:reply, state[:line_member].now, state}
+  end
+
+  def handle_call({:idle_time}, _from, state) do
+    {:reply, state[:line_member].idle_duration, state}
   end
 
   defp check_duration(parameters, _pick_ticket, contents) do
