@@ -29,9 +29,9 @@ defmodule WarehouseSimulator.LineMemberTest do
       )
     end
 
-    def get_and_put_next_line_member(checker, next_in_line, module) do
+    def get_and_put_previous_line_member(checker, previous_in_line, module) do
       Agent.get_and_update(checker, fn state ->
-        LineMember.get_and_put_next_line_member(state[:line_member], next_in_line, module)
+        LineMember.get_and_put_previous_line_member(state[:line_member], previous_in_line, module)
         |> LineMember.merge_line_member_state(state)
       end)
     end
@@ -67,9 +67,9 @@ defmodule WarehouseSimulator.LineMemberTest do
       )
     end
 
-    def get_and_put_next_line_member(checker, next_in_line, module) do
+    def get_and_put_next_line_member(checker, previous_in_line, module) do
       Agent.get_and_update(checker, fn state ->
-        LineMember.get_and_put_next_line_member(state[:line_member], next_in_line, module)
+        LineMember.get_and_put_previous_line_member(state[:line_member], previous_in_line, module)
         |> LineMember.merge_line_member_state(state)
       end)
     end
@@ -113,7 +113,7 @@ defmodule WarehouseSimulator.LineMemberTest do
 
     test "it invokes next in line with valid time and current_contents", context do
       {:ok, other} = CaptureMember.start_link()
-      Member.get_and_put_next_line_member(context[:member], other, CaptureMember)
+      Member.get_and_put_previous_line_member(context[:member], other, CaptureMember)
       pick(context)
       received = CaptureMember.state(other)
       assert received[:receive_at] == 1.0

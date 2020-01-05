@@ -21,14 +21,14 @@ defmodule WarehouseSimulator.Checker do
   end
 
   def handle_call({:process_pick_ticket, receive_at, pick_ticket, current_contents}, _from, state) do
-    LineMember.process_pick_ticket(
+    LineMember.State.process_pick_ticket(
       state[:line_member],
       receive_at,
       pick_ticket,
       current_contents,
       check_duration(state[:parameters], pick_ticket, current_contents)
     )
-    |> LineMember.line_member_reply(state)
+    |> LineMember.State.line_member_reply(state)
   end
 
   defp check_duration(parameters, _pick_ticket, contents) do

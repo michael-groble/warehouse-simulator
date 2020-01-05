@@ -23,14 +23,14 @@ defmodule WarehouseSimulator.Picker do
     {duration, contents} =
       pick_duration_and_contents(state[:parameters], pick_ticket, current_contents)
 
-    LineMember.process_pick_ticket(
+    LineMember.State.process_pick_ticket(
       state[:line_member],
       receive_at,
       pick_ticket,
       contents,
       duration
     )
-    |> LineMember.line_member_reply(state)
+    |> LineMember.State.line_member_reply(state)
   end
 
   defp pick_duration_and_contents(parameters, pick_ticket, current_contents) do

@@ -22,7 +22,9 @@ defmodule WarehouseSimulator.PickerTest do
     setup :start_link
 
     test "it returns the base time", context do
-      assert pick(context) == 1.0
+      Picker.request_pick_ticket(context[:picker], 0.0)
+      pick(context)
+      assert Picker.elapsed_time(context[:picker]) == 1.0
     end
   end
 
@@ -32,7 +34,9 @@ defmodule WarehouseSimulator.PickerTest do
     end
 
     test "it returns base plus item plus quantity", context do
-      assert pick(context) == 3.0
+      Picker.request_pick_ticket(context[:picker], 0.0)
+      pick(context)
+      assert Picker.elapsed_time(context[:picker]) == 3.0
     end
   end
 
@@ -42,7 +46,9 @@ defmodule WarehouseSimulator.PickerTest do
     end
 
     test "it returns base plus items plus quantities", context do
-      assert pick(context) == 6.0
+      Picker.request_pick_ticket(context[:picker], 0.0)
+      pick(context)
+      assert Picker.elapsed_time(context[:picker]) == 6.0
     end
   end
 
@@ -54,9 +60,13 @@ defmodule WarehouseSimulator.PickerTest do
     test "passes tickets along and accumulates time", context do
       [picker: other] = start_link(context, ["B"])
       Picker.get_and_put_next_line_member(context[:picker], other, Picker)
-      t = pick(context, 0)
-      t = pick(context, t)
-      pick(context, t)
+      Picker.get_and_put_previous_line_member(other, context[:picker], Picker)
+      Picker.request_pick_ticket(other, 0.0)
+      pick(context, 0.0)
+      Picker.request_pick_ticket(other, 0.0)
+      pick(context, 0.0)
+      Picker.request_pick_ticket(other, 0.0)
+      pick(context, 0.0)
       # time      1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
       # picker 1: a a a|b b b -|c c c -|
       # picker 2: - - - a a a a|b b b b|c c c c

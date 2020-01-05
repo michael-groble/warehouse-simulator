@@ -22,9 +22,12 @@ defmodule WarehouseSimulator.CheckerTest do
     setup :start_link
 
     test "it returns times based on content", context do
-      assert process(context, %{}) == 1.0
-      assert process(context, %{"A" => 1}) == 4.0
-      assert process(context, %{"A" => 1, "B" => 2}) == 10.0
+      process(context, %{})
+      assert Checker.elapsed_time(context[:checker]) == 1.0
+      process(context, %{"A" => 1})
+      assert Checker.elapsed_time(context[:checker]) == 4.0
+      process(context, %{"A" => 1, "B" => 2})
+      assert Checker.elapsed_time(context[:checker]) == 10.0
     end
   end
 
@@ -34,11 +37,13 @@ defmodule WarehouseSimulator.CheckerTest do
     end
 
     test "it takes no time", context do
-      assert process(context, %{"A" => 1}) == 0.0
+      process(context, %{"A" => 1})
+      assert Checker.elapsed_time(context[:checker]) == 0.0
     end
   end
 
   defp process(context, contents) do
+    Checker.request_pick_ticket(context[:checker], 0.0)
     Checker.process_pick_ticket(context[:checker], 0.0, context[:pick_ticket], contents)
   end
 

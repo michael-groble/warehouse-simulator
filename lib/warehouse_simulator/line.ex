@@ -83,6 +83,15 @@ defmodule WarehouseSimulator.Line do
 
       current
     end)
+    ordered_members(line)
+    |> List.foldl(nil, fn current, previous ->
+      with {pid, module} <- current,
+           {previous_pid, previous_module} <- previous do
+        module.get_and_put_previous_line_member(pid, previous_pid, previous_module)
+      end
+
+      current
+    end)
   end
 
   # children ordered by `id` as `{pid, module}` tuples
